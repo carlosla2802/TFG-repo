@@ -219,7 +219,49 @@ elif option == 'Univariate Analysis of Features':
     # Streamlit integration
     st.plotly_chart(fig)
 
-elif option == 'Bivariate Analysis of Features with MICHD':
-    # Código para la visualización de barras por edad y MICHD, como en tu código
-    # ...
-    pass
+elif option == 'Bivariate Analysis of Features with _MICHD':
+
+    # Function to check it its real intenger (number.0 and not number.x)
+    def is_integer(x):
+        try:
+            return float(x).is_integer()
+        except ValueError:
+            return False
+
+    # Finds columns that are of type 'float64' or 'int64' and have 15 unique values or less
+    categories = [col for col in df.columns if (df[col].dtype == 'float64' or df[col].dtype == 'int64') and df[col].nunique() <= 15]
+
+    # Convert these columns to type 'category' only if all values are integers
+    for col in categories:
+        # Checks if all values in the column are actually integers (.0 as fractional part)
+        if all(df[col].dropna().apply(is_integer)):
+            df[col] = df[col].astype('category')
+
+    #--------------------------------------------------
+
+    # Crear una figura para contener los subgráficos
+    fig = make_subplots(rows=len(df.columns), cols=1, subplot_titles=[f'Violin Plot of {col} by _MICHD' if pd.api.types.is_numeric_dtype(df[col]) else f'Count Plot of {col} by _MICHD' for col in df.columns])
+
+    # Añade trazos al gráfico
+    for i, column in enumerate(df.columns):
+        if pd.api.types.is_numeric_dtype(df[column]):
+            # Diagramas de violín para variables numéricas
+            fig.add_trace(go.Violin(y=df[df['_MICHD']==0][column],
+                                    name=f'{column} (_MICHD 0)',
+                                    line_color='green'), row=i+1, col=1)
+            fig.add_trace(go.Violin(y=df[df['_MICHD']==1][column],
+                                    name=f'{column} (_MICHD 1)',
+                                    line_color='red'), row=i+1, col=1)
+        else:
+            # Gráfico de barras para variables categóricas
+            values_0 = df[df['_MICHD'] == 0][column].value_counts().sort_index()
+            values_1 = df[df['_MICHD'] == 1][column].value_counts().sort_index()
+            fig.add_trace(go.Bar(x=values_0.index, y=values_0.values, name=f'{column} (_MICHD 0)', marker_color='green'), row=i+1, col=1)
+            fig.add_trace(go.Bar(x=values_1.index, y=values_1.values, name=f'{column} (_MICHD 1)', marker_color='red'), row=i+1, col=1)
+
+    # Ajustar layout del gráfico
+    fig.update_layout(height=300 * len(df.columns), title_text="Bivariate Analysis of Features with _MICHD", showlegend=False)
+
+    # Mostrar la figura en Streamlit
+    st.plotly_chart(fig, use_container_width=True)
+
