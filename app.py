@@ -8,8 +8,15 @@ from math import ceil
 
 st.set_page_config(layout="wide")  # Configuración de la página para un layout más ancho
 
-# Carga de datos
-df = pd.read_csv("final_dataset.csv")
+page_bg_img = """
+<style>
+[data-testid="stSidebar"]{
+background-color: #dddddd;
+opacity: 0.8;
+</style>
+"""
+
+st.markdown(page_bg_img, unsafe_allow_html=True)
 
 # Inicialización de la app de Streamlit
 st.title('📊  EDA Visualizer')
@@ -19,6 +26,13 @@ option = st.sidebar.selectbox(
     'Select the visualization:',
     ('Feature by Age', 'Correlation Matrix', 'Correlations with MICHD', 'Univariate Analysis of Features', 'Bivariate Analysis of Features with _MICHD')
 )
+
+
+
+# -----------------------------------------
+
+# Carga de datos
+df = pd.read_csv("final_dataset.csv")
 
 if option == 'Feature by Age':
     age_mapping = {6.0: '45-49 years', 7.0: '50-54 years', 8.0: '55-59 years', 9.0: '60-64 years', 10.0: '65-69 years', 11.0: '70-74 years', 12.0: '75-79 years', 13.0: '80 years or more'}
