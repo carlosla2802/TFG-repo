@@ -4,6 +4,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import streamlit as st
 import numpy as np
+from math import ceil
 
 st.set_page_config(layout="wide")  # Configuración de la página para un layout más ancho
 
@@ -239,29 +240,42 @@ elif option == 'Bivariate Analysis of Features with _MICHD':
 
     #--------------------------------------------------
 
-    # Crear una figura para contener los subgráficos
-    fig = make_subplots(rows=len(df.columns), cols=1, subplot_titles=[f'Violin Plot of {col} by _MICHD' if pd.api.types.is_numeric_dtype(df[col]) else f'Count Plot of {col} by _MICHD' for col in df.columns])
+    # Determina el número de filas necesarias para dos columnas
+    rows = ceil(len(df.columns) / 2)
+    cols = 2
 
-    # Añade trazos al gráfico
+    # Crear una figura para contener los subgráficos con dos columnas
+    fig = make_subplots(rows=rows, cols=cols, subplot_titles=[f'Violin Plot of {col} by _MICHD' if pd.api.types.is_numeric_dtype(df[col]) else f'Count Plot of {col} by _MICHD' for col in df.columns])
+
+    # Variables para controlar la posición actual del subplot
+    current_row = 1
+    current_col = 1
+
+    # Añade trazos al gráfico ajustando la posición basada en la iteración
     for i, column in enumerate(df.columns):
         if pd.api.types.is_numeric_dtype(df[column]):
             # Diagramas de violín para variables numéricas
             fig.add_trace(go.Violin(y=df[df['_MICHD']==0][column],
                                     name=f'{column} (_MICHD 0)',
-                                    line_color='green'), row=i+1, col=1)
+                                    line_color='green'), row=current_row, col=current_col)
             fig.add_trace(go.Violin(y=df[df['_MICHD']==1][column],
                                     name=f'{column} (_MICHD 1)',
-                                    line_color='red'), row=i+1, col=1)
+                                    line_color='red'), row=current_row, col=current_col)
         else:
             # Gráfico de barras para variables categóricas
             values_0 = df[df['_MICHD'] == 0][column].value_counts().sort_index()
             values_1 = df[df['_MICHD'] == 1][column].value_counts().sort_index()
-            fig.add_trace(go.Bar(x=values_0.index, y=values_0.values, name=f'{column} (_MICHD 0)', marker_color='green'), row=i+1, col=1)
-            fig.add_trace(go.Bar(x=values_1.index, y=values_1.values, name=f'{column} (_MICHD 1)', marker_color='red'), row=i+1, col=1)
+            fig.add_trace(go.Bar(x=values_0.index, y=values_0.values, name=f'{column} (_MICHD 0)', marker_color='green'), row=current_row, col=current_col)
+            fig.add_trace(go.Bar(x=values_1.index, y=values_1.values, name=f'{column} (_MICHD 1)', marker_color='red'), row=current_row, col=current_col)
+        
+        # Actualizar la columna y la fila para el próximo subplot
+        current_col += 1
+        if current_col > cols:
+            current_col = 1
+            current_row += 1
 
     # Ajustar layout del gráfico
-    fig.update_layout(height=300 * len(df.columns), title_text="Bivariate Analysis of Features with _MICHD", showlegend=False)
+    fig.update_layout(height=300 * rows, width=1200, title_text="Bivariate Analysis of Features with _MICHD", showlegend=False)
 
     # Mostrar la figura en Streamlit
     st.plotly_chart(fig, use_container_width=True)
-
