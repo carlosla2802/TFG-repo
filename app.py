@@ -18,6 +18,17 @@ opacity: 0.8;
 
 st.markdown(page_bg_img, unsafe_allow_html=True)
 
+st.markdown("""
+        <style>
+               .block-container {
+                    padding-top: 1rem;
+                    padding-bottom: 0rem;
+                    padding-left: 5rem;
+                    padding-right: 5rem;
+                }
+        </style>
+        """, unsafe_allow_html=True)
+
 # Inicialización de la app de Streamlit
 st.title('📊  EDA Visualizer')
 
@@ -27,6 +38,11 @@ option = st.sidebar.selectbox(
     ('Feature by Age', 'Correlation Matrix', 'Correlations with MICHD', 'Univariate Analysis', 'Bivariate Analysis')
 )
 
+# Empty space to push the image to the bottom of the sidebar
+for _ in range(25):
+    st.sidebar.write("")
+
+st.sidebar.image('Logo_uab.png', use_column_width=True, caption='Carlos Leta, Data Engineering Degree')
 
 
 # -----------------------------------------
@@ -201,7 +217,7 @@ elif option == 'Correlations with MICHD':
     st.plotly_chart(fig, use_container_width=True)
 
 
-elif option == 'Univariate Analysis of Features':
+elif option == 'Univariate Analysis':
     # Define la disposición de los gráficos
     rows = 16  # Ajusta según el número de gráficos
     cols = 2
@@ -234,7 +250,7 @@ elif option == 'Univariate Analysis of Features':
     # Streamlit integration
     st.plotly_chart(fig)
 
-elif option == 'Bivariate Analysis of Features with _MICHD':
+elif option == 'Bivariate Analysis':
 
     # Function to check it its real intenger (number.0 and not number.x)
     def is_integer(x):
