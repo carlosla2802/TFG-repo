@@ -24,7 +24,7 @@ st.title('📊  EDA Visualizer')
 # Menú de selección en la barra lateral
 option = st.sidebar.selectbox(
     'Select the visualization:',
-    ('Feature by Age', 'Correlation Matrix', 'Correlations with MICHD', 'Univariate Analysis of Features', 'Bivariate Analysis of Features with _MICHD')
+    ('Feature by Age', 'Correlation Matrix', 'Correlations with MICHD', 'Univariate Analysis', 'Bivariate Analysis')
 )
 
 
@@ -254,34 +254,34 @@ elif option == 'Bivariate Analysis of Features with _MICHD':
 
     #--------------------------------------------------
 
+
     # Determina el número de filas necesarias para dos columnas
     rows = ceil(len(df.columns) / 2)
     cols = 2
 
     # Crear una figura para contener los subgráficos con dos columnas
-    fig = make_subplots(rows=rows, cols=cols, subplot_titles=[f'Violin Plot of {col} by _MICHD' if pd.api.types.is_numeric_dtype(df[col]) else f'Count Plot of {col} by _MICHD' for col in df.columns])
+    fig = make_subplots(rows=rows, cols=cols, subplot_titles=[f'Bar Chart of {col} by _MICHD' if df[col].dtype == np.number and df[col].nunique() == 2 else f'Violin Plot of {col} by _MICHD' if pd.api.types.is_numeric_dtype(df[col]) else f'Count Plot of {col} by _MICHD' for col in df.columns if col != '_MICHD'])
 
     # Variables para controlar la posición actual del subplot
     current_row = 1
     current_col = 1
 
-    # Añade trazos al gráfico ajustando la posición basada en la iteración
     for i, column in enumerate(df.columns):
-        if pd.api.types.is_numeric_dtype(df[column]):
-            # Diagramas de violín para variables numéricas
-            fig.add_trace(go.Violin(y=df[df['_MICHD']==0][column],
-                                    name=f'{column} (_MICHD 0)',
-                                    line_color='green'), row=current_row, col=current_col)
-            fig.add_trace(go.Violin(y=df[df['_MICHD']==1][column],
-                                    name=f'{column} (_MICHD 1)',
-                                    line_color='red'), row=current_row, col=current_col)
-        else:
-            # Gráfico de barras para variables categóricas
-            values_0 = df[df['_MICHD'] == 0][column].value_counts().sort_index()
-            values_1 = df[df['_MICHD'] == 1][column].value_counts().sort_index()
-            fig.add_trace(go.Bar(x=values_0.index, y=values_0.values, name=f'{column} (_MICHD 0)', marker_color='green'), row=current_row, col=current_col)
-            fig.add_trace(go.Bar(x=values_1.index, y=values_1.values, name=f'{column} (_MICHD 1)', marker_color='red'), row=current_row, col=current_col)
-        
+        if column != '_MICHD':
+            if df[column].dtype == np.number and df[column].nunique() == 2:  # Check if the column is numeric and binary
+                values_0 = df[df['_MICHD'] == 0][column].value_counts().sort_index()
+                values_1 = df[df['_MICHD'] == 1][column].value_counts().sort_index()
+                fig.add_trace(go.Bar(x=[0, 1], y=[values_0.get(0, 0), values_0.get(1, 0)], name=f'{column} (_MICHD 0)', marker_color='green'), row=current_row, col=current_col)
+                fig.add_trace(go.Bar(x=[0, 1], y=[values_1.get(0, 0), values_1.get(1, 0)], name=f'{column} (_MICHD 1)', marker_color='red'), row=current_row, col=current_col)
+            elif pd.api.types.is_numeric_dtype(df[column]):
+                fig.add_trace(go.Violin(y=df[df['_MICHD']==0][column], name=f'{column} (_MICHD 0)', line_color='green'), row=current_row, col=current_col)
+                fig.add_trace(go.Violin(y=df[df['_MICHD']==1][column], name=f'{column} (_MICHD 1)', line_color='red'), row=current_row, col=current_col)
+            else:
+                values_0 = df[df['_MICHD'] == 0][column].value_counts().sort_index()
+                values_1 = df[df['_MICHD'] == 1][column].value_counts().sort_index()
+                fig.add_trace(go.Bar(x=values_0.index, y=values_0.values, name=f'{column} (_MICHD 0)', marker_color='green'), row=current_row, col=current_col)
+                fig.add_trace(go.Bar(x=values_1.index, y=values_1.values, name=f'{column} (_MICHD 1)', marker_color='red'), row=current_row, col=current_col)
+
         # Actualizar la columna y la fila para el próximo subplot
         current_col += 1
         if current_col > cols:
