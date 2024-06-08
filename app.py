@@ -187,43 +187,37 @@ elif option == 'Correlations with MICHD':
 
 
 elif option == 'Univariate Analysis of Features':
+    # Define la disposición de los gráficos
+    rows = 16  # Ajusta según el número de gráficos
+    cols = 2
+    fig = make_subplots(rows=rows, cols=cols, subplot_titles=[f'Bar Chart of {col}' if df[col].dtype == 'O' else f'Histogram of {col}' for col in df.columns])
 
-    # Lista de características a analizar
-    final_features = df.columns  # Ajusta esto si solo quieres ciertas columnas
-
-    # Crear subplots con 1 fila por cada par de características
-    fig = make_subplots(rows=len(final_features)//2 + len(final_features)%2, cols=2, subplot_titles=[col for col in final_features])
-
-    # Paleta de colores para alternar y evitar repetición en la misma fila
-    color_palette = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
-
-    # Función para añadir trazas al gráfico
-    def add_trace(column, row, col):
-        unique_values = sorted(df[column].dropna().unique())
-        if pd.api.types.is_numeric_dtype(df[column]):
-            # Si la columna es numérica, crea un histograma
-            fig.add_trace(go.Histogram(x=df[column], nbinsx=30, name=column), row=row, col=col)
-        else:
-            # Si la columna es categórica, crea un gráfico de barras
+    # Rellena los subgráficos
+    row = 1
+    col = 1
+    for i, column in enumerate(df.columns):
+        if df[column].dtype == np.number and len(df[column].unique()) == 2:  # Verifica si la columna es numérica y binaria
+            # Utiliza un gráfico de barras para variables binarias
             counts = df[column].value_counts()
-            fig.add_trace(go.Bar(x=counts.index, y=counts.values, name=column, marker_color=color_palette[(row-1)*2 + (col-1) % len(color_palette)]), row=row, col=col)
-            if len(unique_values) <= 10:  # Ajuste para variables con pocas categorías
-                fig.update_xaxes(row=row, col=col, categoryorder='array', categoryarray=unique_values)
+            fig.add_trace(go.Bar(x=[0, 1], y=[counts.get(0, 0), counts.get(1, 0)], width=0.4), row=row, col=col)
+            fig.update_xaxes(tickvals=[0, 1], row=row, col=col)
+        elif df[column].dtype == np.number:
+            fig.add_trace(go.Histogram(x=df[column], nbinsx=30), row=row, col=col)
+        else:
+            counts = df[column].value_counts()
+            fig.add_trace(go.Bar(x=counts.index, y=counts.values), row=row, col=col)
 
-    # Añadir gráficos a cada subplot
-    for i, column in enumerate(final_features):
-        add_trace(column, i // 2 + 1, i % 2 + 1)
+        col += 1
+        if col > cols:
+            col = 1
+            row += 1
 
-    # Actualizar el layout para mejorar la visualización
-    fig.update_layout(
-        height=300 * (len(final_features)//2 + len(final_features)%2),  # Altura basada en el número de filas necesarias
-        width=1200,  # Ancho suficiente para dos columnas
-        title_text="Univariate Analysis of Features",
-        showlegend=True
-    )
+    # Actualiza el diseño
+    fig.update_layout(height=3000, width=1200, title_text="Univariate Analysis of Features", showlegend=False)
 
-    # Mostrar el gráfico en Streamlit
-    st.plotly_chart(fig, use_container_width=True)
+
+    # Streamlit integration
+    st.plotly_chart(fig)
 
 elif option == 'Bivariate Analysis of Features with MICHD':
     # Código para la visualización de barras por edad y MICHD, como en tu código
