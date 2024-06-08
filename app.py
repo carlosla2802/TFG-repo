@@ -8,14 +8,15 @@ from math import ceil
 
 st.set_page_config(layout="wide")  # Configuración de la página para un layout más ancho
 
+# Estilos de la barra lateral y del contenedor
 page_bg_img = """
 <style>
 [data-testid="stSidebar"]{
 background-color: #dddddd;
 opacity: 0.8;
+}
 </style>
 """
-
 st.markdown(page_bg_img, unsafe_allow_html=True)
 
 st.markdown("""
@@ -32,17 +33,36 @@ st.markdown("""
 # Inicialización de la app de Streamlit
 st.title('📊  EDA Visualizer')
 
-# Menú de selección en la barra lateral
-option = st.sidebar.selectbox(
-    'Select the visualization:',
-    ('Feature by Age', 'Correlation Matrix', 'Correlations with MICHD', 'Univariate Analysis', 'Bivariate Analysis')
-)
+# Lista de opciones de visualización
+visualization_options = ['Feature by Age', 'Correlation Matrix', 'Correlations with MICHD', 'Univariate Analysis', 'Bivariate Analysis']
 
-# Empty space to push the image to the bottom of the sidebar
-for _ in range(25):
+# Inicialización de la variable de estado si no existe o al reiniciar
+if 'selected_option' not in st.session_state or st.session_state.selected_option not in visualization_options:
+    st.session_state.selected_option = visualization_options[0]  # Selecciona la primera opción por defecto
+
+# Función para manejar clics en los botones
+def handle_button_click(option):
+    st.session_state.selected_option = option
+
+# Menú de selección en la barra lateral usando botones en lugar de selectbox
+st.sidebar.markdown("**Select the visualization:**")
+for option in visualization_options:
+    if st.sidebar.button(option):
+        handle_button_click(option)
+
+st.sidebar.markdown("""
+    <style>
+    .stButton>button {
+        width: 100%;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# Espacio vacío para empujar la imagen al fondo de la barra lateral
+for _ in range(10):
     st.sidebar.write("")
 
-st.sidebar.image('Logo_uab.png', use_column_width=True, caption='Carlos Leta, Data Engineering Degree')
+st.sidebar.image('Logo_uab.png', use_column_width=True, caption='Carlos Leta, Data Engineering')
 
 
 # -----------------------------------------
@@ -50,7 +70,7 @@ st.sidebar.image('Logo_uab.png', use_column_width=True, caption='Carlos Leta, Da
 # Carga de datos
 df = pd.read_csv("final_dataset.csv")
 
-if option == 'Feature by Age':
+if st.session_state.selected_option == 'Feature by Age':
     age_mapping = {6.0: '45-49 years', 7.0: '50-54 years', 8.0: '55-59 years', 9.0: '60-64 years', 10.0: '65-69 years', 11.0: '70-74 years', 12.0: '75-79 years', 13.0: '80 years or more'}
 
     df['_AGEG5YR'] = df['_AGEG5YR'].map(age_mapping)
@@ -146,7 +166,7 @@ if option == 'Feature by Age':
 
 
 
-elif option == 'Correlation Matrix':
+elif st.session_state.selected_option == 'Correlation Matrix':
     # Cálculo de la matriz de correlación
     matriz_correlacion = df.corr()
 
@@ -182,7 +202,7 @@ elif option == 'Correlation Matrix':
     st.plotly_chart(fig, use_container_width=True)
 
 
-elif option == 'Correlations with MICHD':
+elif st.session_state.selected_option == 'Correlations with MICHD':
 
 
     # Calcular la correlación específica con '_MICHD'
@@ -217,11 +237,13 @@ elif option == 'Correlations with MICHD':
     st.plotly_chart(fig, use_container_width=True)
 
 
-elif option == 'Univariate Analysis':
+elif st.session_state.selected_option == 'Univariate Analysis':
     # Define la disposición de los gráficos
-    rows = 16  # Ajusta según el número de gráficos
+    rows = ceil(len(df.columns) / 2)  # Ajusta según el número de gráficos
     cols = 2
-    fig = make_subplots(rows=rows, cols=cols, subplot_titles=[f'Bar Chart of {col}' if df[col].dtype == 'O' else f'Histogram of {col}' for col in df.columns])
+    # fig = make_subplots(rows=rows, cols=cols, subplot_titles=[f'Bar Chart of {col}' if df[col].dtype == 'O' else f'Histogram of {col}' for col in df.columns])
+    fig = make_subplots(rows=rows, cols=cols, subplot_titles=[f'{col}' for col in df.columns])
+
 
     # Rellena los subgráficos
     row = 1
@@ -244,13 +266,13 @@ elif option == 'Univariate Analysis':
             row += 1
 
     # Actualiza el diseño
-    fig.update_layout(height=3000, width=1200, title_text="Univariate Analysis of Features", showlegend=False)
+    fig.update_layout(height=300 * rows, width=1050, title_text="Univariate Analysis of Features", showlegend=False)
 
 
     # Streamlit integration
     st.plotly_chart(fig)
 
-elif option == 'Bivariate Analysis':
+elif st.session_state.selected_option == 'Bivariate Analysis':
 
     # Function to check it its real intenger (number.0 and not number.x)
     def is_integer(x):
