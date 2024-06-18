@@ -6,9 +6,9 @@ import streamlit as st
 import numpy as np
 from math import ceil
 
-st.set_page_config(layout="wide")  # Configuración de la página para un layout más ancho
+st.set_page_config(layout="wide")  # Page configuration for a wider layout
 
-# Estilos de la barra lateral y del contenedor
+# Sidebar and container styles
 page_bg_img = """
 <style>
 [data-testid="stSidebar"]{
@@ -30,21 +30,21 @@ st.markdown("""
         </style>
         """, unsafe_allow_html=True)
 
-# Inicialización de la app de Streamlit
+# Initialization of the Streamlit App
 st.title('📊  EDA Visualizer')
 
-# Lista de opciones de visualización
+# List of display options
 visualization_options = ['Feature by Age', 'Correlation Matrix', 'Correlations with MICHD', 'Univariate Analysis', 'Bivariate Analysis']
 
-# Inicialización de la variable de estado si no existe o al reiniciar
+# Initialization of the status variable if it does not exist or at restarting
 if 'selected_option' not in st.session_state or st.session_state.selected_option not in visualization_options:
-    st.session_state.selected_option = visualization_options[0]  # Selecciona la primera opción por defecto
+    st.session_state.selected_option = visualization_options[0]  # Select the first option by default
 
-# Función para manejar clics en los botones
+# Function to manage button clicks
 def handle_button_click(option):
     st.session_state.selected_option = option
 
-# Menú de selección en la barra lateral usando botones en lugar de selectbox
+# Selection menu in the sidebar using buttons instead of selectbox
 st.sidebar.markdown("**Select the visualization:**")
 for option in visualization_options:
     if st.sidebar.button(option):
@@ -58,7 +58,7 @@ st.sidebar.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# Espacio vacío para empujar la imagen al fondo de la barra lateral
+# Empty space to push the image to the bottom of the sidebar
 for _ in range(10):
     st.sidebar.write("")
 
@@ -67,7 +67,7 @@ st.sidebar.image('Logo_uab.png', use_column_width=True, caption='Carlos Leta, Da
 
 # -----------------------------------------
 
-# Carga de datos
+# Data upload
 df = pd.read_csv("final_dataset.csv")
 
 if st.session_state.selected_option == 'Feature by Age':
@@ -94,14 +94,12 @@ if st.session_state.selected_option == 'Feature by Age':
             df[col] = df[col].astype('category')
 
 
-    # Código para visualización de características por edad
-    # ...
-    # Seleccionar la columna para visualización
+    # Select column for display
     column = st.selectbox('Select the feature to display:', df.columns, index=df.columns.get_loc('CVDSTRK3'))
 
 
     if df[column].dtype == 'category':
-        # Crear el gráfico de líneas principal con Plotly
+        # Creating the main line chart with Plotly
         line_data = df.groupby([column, '_AGEG5YR']).size().reset_index(name='Frequency')
         fig_line = px.line(line_data, x='_AGEG5YR', y='Frequency', color=column, labels={'_AGEG5YR': 'Age Group', 'Frequency': 'Frequency'},
                         title=f'Distribution of {column} by Age Group')
@@ -112,30 +110,29 @@ if st.session_state.selected_option == 'Feature by Age':
                         title=f'Distribution of {column} by Age Group')
         st.plotly_chart(fig_box, use_container_width=True)
 
-    # Crear subplots para cada grupo de edad con condiciones específicas
+    # Create subplots for each age group with specific conditions
     fig_bar = go.Figure()
     age_groups = sorted(df['_AGEG5YR'].unique())
 
     for age in age_groups:
         age_data = df_sorted[df_sorted['_AGEG5YR'] == age]
-        # Asumimos que solo hay dos condiciones, 0 y 1
-        for cond in [0, 1]:  # Asegurar que la condición 0 está a la izquierda y 1 a la derecha
+        for cond in [0, 1]:  # Ensure that condition 0 is on the left and 1 on the right
             subset = age_data[age_data['_MICHD'] == cond]
             fig_bar.add_trace(go.Bar(
                 x=[f'Age {age}'], 
                 y=[subset[column].count()],
                 name=f'MICHD {cond}',
-                offsetgroup=cond,  # Usar la condición como offsetgroup
+                offsetgroup=cond,  # Use condition as offsetgroup
                 base=None  # base set to None for normal stacking
             ))
 
-    # Ajustar layout del gráfico de barras y agregar anotaciones
+    # Adjust bar chart layout and add annotations
     annotations = []
     for i, age in enumerate(age_groups):
-        # Ajustar la posición vertical de las anotaciones para estar bajo las barras
+        # Adjust the vertical position of the annotations to be under the bars.
         annotations.append(dict(
-            x=i - 0.2,  # Ajustar posición para la barra izquierda
-            y=-300,  # Posición vertical ajustada
+            x=i - 0.2,  # Adjust position for left bar
+            y=-300,  # Vertical position adjusted
             text='MICHD 0',
             showarrow=False,
             xref="x",
@@ -143,8 +140,8 @@ if st.session_state.selected_option == 'Feature by Age':
             align="center"
         ))
         annotations.append(dict(
-            x=i + 0.2,  # Ajustar posición para la barra derecha
-            y=-300,  # Posición vertical ajustada
+            x=i + 0.2,  # Adjust position for the right bar
+            y=-300,  # Vertical position adjusted
             text='MICHD 1',
             showarrow=False,
             xref="x",
@@ -157,8 +154,8 @@ if st.session_state.selected_option == 'Feature by Age':
         title='Distribution by Age Group and MICHD',
         xaxis_title='Age Group',
         yaxis_title='Frequency',
-        bargap=0.3,  # Ajustar el espacio entre grupos de barras
-        showlegend=False,  # Ocultar la leyenda
+        bargap=0.3,  # Adjust the spacing between groups of busbars
+        showlegend=False,  # Hide the legend
         annotations=annotations
     )
 
@@ -167,59 +164,59 @@ if st.session_state.selected_option == 'Feature by Age':
 
 
 elif st.session_state.selected_option == 'Correlation Matrix':
-    # Cálculo de la matriz de correlación
+    # Calculation of the correlation matrix
     matriz_correlacion = df.corr()
 
-    # Crear una máscara para ocultar la parte triangular superior excluyendo la diagonal
+    # Create a mask to hide the upper triangular part excluding the diagonal.
     mask = np.triu(np.ones_like(matriz_correlacion, dtype=bool))
 
-    # Haciendo la matriz de correlación más manipulable para Plotly
+    # Making the correlation matrix more manipulable for Plotly
     masked_corr = matriz_correlacion.mask(mask)
 
-    # Crear el heatmap interactivo utilizando Plotly
+    # Create the interactive heatmap using Plotly
     fig = px.imshow(masked_corr,
                     text_auto=True,
-                    aspect='equal',  # Cambiado a 'equal' para mantener las proporciones cuadradas
+                    aspect='equal',  # Changed to 'equal' to maintain square proportions
                     labels=dict(color="Correlation"),
-                    color_continuous_scale='RdBu_r',  # Cambio aquí para invertir la escala
+                    color_continuous_scale='RdBu_r',  # Change here to invert the scale
                     zmin=-1, zmax=1)
 
-    # Actualizar títulos y etiquetas
+    # Update titles and labels
     fig.update_layout(
         title='Correlation Matrix',
         xaxis_title='Variables',
         yaxis_title='Variables',
-        xaxis={'side': 'bottom'},  # Asegura que los labels del eje X estén en la parte inferior
+        xaxis={'side': 'bottom'},   # Make sure that the X-axis labels are at the bottom of the X axis.
         yaxis_tickmode='array',
         yaxis_tickvals=np.arange(len(df.columns)),
         yaxis_ticktext=df.columns,
-        autosize=False,  # Permite un tamaño personalizado
-        width=800,  # Anchura personalizable
-        height=800  # Altura personalizable para hacerlo más cuadrado
+        autosize=False,  # Allows custom sizing
+        width=800,  # Customizable width
+        height=800  # Customizable height to make it more square
     )
 
-    # Mostrar el gráfico en Streamlit
+    # Display the graph in Streamlit
     st.plotly_chart(fig, use_container_width=True)
 
 
 elif st.session_state.selected_option == 'Correlations with MICHD':
 
 
-    # Calcular la correlación específica con '_MICHD'
+    # Calculate the specific correlation with '_MICHD'.
     df_sin_michd = df.drop('_MICHD', axis=1)
     corr = df_sin_michd.corrwith(df['_MICHD']).sort_values(ascending=False).to_frame()
     corr.columns = ['Correlations']
 
-    # Definir los colores personalizados como una escala
+    # Define custom colors as a scale
     colors = ["#FFA07A", "#DC143C", "#B22222", "#E94B3C", "#2D2926"]  # Colores en formato HEX
 
-    # Crear el gráfico de barras horizontal
+    # Create the horizontal bar chart
     fig = px.bar(corr, y=corr.index, x='Correlations', orientation='h',
                 title='Correlation with _MICHD',
                 color='Correlations',
                 color_continuous_scale=colors)
 
-    # Actualizar el layout para mejorar la visualización
+    # Update the layout to improve visualization
     fig.update_layout(
         coloraxis_colorbar=dict(
             title='Correlation',
@@ -228,29 +225,29 @@ elif st.session_state.selected_option == 'Correlations with MICHD':
         ),
         xaxis_title='Correlation Value',
         yaxis_title='Variables',
-        autosize=False,  # Permite un tamaño personalizado
-        height=len(corr) * 40 + 100,  # Altura basada en el número de variables más algo de espacio adicional
-        width=800  # Anchura fija
+        autosize=False,  # Allows custom sizing
+        height=len(corr) * 40 + 100,  # Height based on the number of variables plus some additional space
+        width=800  # Fixed width
     )
 
-    # Mostrar el gráfico en Streamlit
+    # Display the graph in Streamlit
     st.plotly_chart(fig, use_container_width=True)
 
 
 elif st.session_state.selected_option == 'Univariate Analysis':
-    # Define la disposición de los gráficos
-    rows = ceil(len(df.columns) / 2)  # Ajusta según el número de gráficos
+    # Defines the layout of the graphics
+    rows = ceil(len(df.columns) / 2)  # Adjusts according to the number of graphs
     cols = 2
     # fig = make_subplots(rows=rows, cols=cols, subplot_titles=[f'Bar Chart of {col}' if df[col].dtype == 'O' else f'Histogram of {col}' for col in df.columns])
     fig = make_subplots(rows=rows, cols=cols, subplot_titles=[f'{col}' for col in df.columns])
 
 
-    # Rellena los subgráficos
+    # Fill in the subcharts
     row = 1
     col = 1
     for i, column in enumerate(df.columns):
-        if df[column].dtype == np.number and len(df[column].unique()) == 2:  # Verifica si la columna es numérica y binaria
-            # Utiliza un gráfico de barras para variables binarias
+        if df[column].dtype == np.number and len(df[column].unique()) == 2:  # Checks if the column is numeric and binaryia
+            # Uses a bar chart for binary variables
             counts = df[column].value_counts()
             fig.add_trace(go.Bar(x=[0, 1], y=[counts.get(0, 0), counts.get(1, 0)], width=0.4), row=row, col=col)
             fig.update_xaxes(tickvals=[0, 1], row=row, col=col)
@@ -265,7 +262,7 @@ elif st.session_state.selected_option == 'Univariate Analysis':
             col = 1
             row += 1
 
-    # Actualiza el diseño
+    # Update the design
     fig.update_layout(height=300 * rows, width=1050, title_text="Univariate Analysis of Features", showlegend=False)
 
 
@@ -293,14 +290,14 @@ elif st.session_state.selected_option == 'Bivariate Analysis':
     #--------------------------------------------------
 
 
-    # Determina el número de filas necesarias para dos columnas
+    # Determines the number of rows required for two columns
     rows = ceil(len(df.columns) / 2)
     cols = 2
 
-    # Crear una figura para contener los subgráficos con dos columnas
+    # Create a figure to contain the subgraphs with two columns
     fig = make_subplots(rows=rows, cols=cols, subplot_titles=[f'Bar Chart of {col} by _MICHD' if df[col].dtype == np.number and df[col].nunique() == 2 else f'Violin Plot of {col} by _MICHD' if pd.api.types.is_numeric_dtype(df[col]) else f'Count Plot of {col} by _MICHD' for col in df.columns if col != '_MICHD'])
 
-    # Variables para controlar la posición actual del subplot
+    # Variables to control the current position of the subplot
     current_row = 1
     current_col = 1
 
@@ -320,14 +317,14 @@ elif st.session_state.selected_option == 'Bivariate Analysis':
                 fig.add_trace(go.Bar(x=values_0.index, y=values_0.values, name=f'{column} (_MICHD 0)', marker_color='green'), row=current_row, col=current_col)
                 fig.add_trace(go.Bar(x=values_1.index, y=values_1.values, name=f'{column} (_MICHD 1)', marker_color='red'), row=current_row, col=current_col)
 
-        # Actualizar la columna y la fila para el próximo subplot
+        # Update the column and row for the next subplot
         current_col += 1
         if current_col > cols:
             current_col = 1
             current_row += 1
 
-    # Ajustar layout del gráfico
+    # Adjust chart layout
     fig.update_layout(height=300 * rows, width=1200, title_text="Bivariate Analysis of Features with _MICHD", showlegend=False)
 
-    # Mostrar la figura en Streamlit
+    # Show the figure in Streamlitt
     st.plotly_chart(fig, use_container_width=True)
