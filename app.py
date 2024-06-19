@@ -106,7 +106,8 @@ if st.session_state.selected_option == 'Feature by Age':
         fig_line.update_traces(mode='lines+markers')
         st.plotly_chart(fig_line, use_container_width=True)
     else:
-        fig_box = px.box(df, x='_AGEG5YR', y=column, labels={'_AGEG5YR': 'Age Group', column: 'Value'},
+        fig_box = px.box(df, x='_AGEG5YR', y=column, category_orders={'_AGEG5YR': sorted(df['_AGEG5YR'].unique())},
+                        labels={'_AGEG5YR': 'Age Group', column: 'Value'},
                         title=f'Distribution of {column} by Age Group')
         st.plotly_chart(fig_box, use_container_width=True)
 
@@ -191,8 +192,8 @@ elif st.session_state.selected_option == 'Correlation Matrix':
         yaxis_tickvals=np.arange(len(df.columns)),
         yaxis_ticktext=df.columns,
         autosize=False,  # Allows custom sizing
-        width=800,  # Customizable width
-        height=800  # Customizable height to make it more square
+        width=1000,  # Customizable width
+        height=1000  # Customizable height to make it more square
     )
 
     # Display the graph in Streamlit
@@ -267,7 +268,7 @@ elif st.session_state.selected_option == 'Univariate Analysis':
 
 
     # Streamlit integration
-    st.plotly_chart(fig)
+    st.plotly_chart(fig, use_container_width=True)
 
 elif st.session_state.selected_option == 'Bivariate Analysis':
 
